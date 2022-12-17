@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  twitch-bot:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: production
+    volumes:
+      - ./application.yml:/run/luya-support/application.yml
+    environment:
+      - PROC_ARGS="--spring.config.location=/run/luya-support/application.yml"      
