@@ -4,7 +4,11 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
 import kr.enak.luya.luyasupport.twitch.commands.CommandFollowingImpl
+import kr.enak.luya.luyasupport.twitch.commands.CommandMarkTimestampViaDiscordImpl
 import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.ApplicationContext
+import org.springframework.context.ApplicationContextAware
 import org.springframework.stereotype.Component
 import javax.annotation.PostConstruct
 
@@ -13,14 +17,20 @@ class SlaveOfLuyaBot(
     private val config: TwitchBotConfiguration,
     private val twitchService: TwitchService,
 ) {
+    @Autowired
+    private lateinit var context: ApplicationContext
+
     private val commandMap: HashMap<String, AbstractPrefixCommand> = hashMapOf()
 
     @PostConstruct
     fun init() {
         bindHandlers()
-        registerCommands(listOf<AbstractPrefixCommand>(
-                CommandFollowingImpl("follow", "팔로우")
-        ))
+        registerCommands(
+            listOf<AbstractPrefixCommand>(
+                CommandFollowingImpl("follow", "팔로우"),
+                CommandMarkTimestampViaDiscordImpl("mark", "마커"),
+            )
+        )
         joinChannels(config.channels)
     }
 
@@ -55,6 +65,9 @@ class SlaveOfLuyaBot(
             listOf(command.name, *command.aliases).forEach { name ->
                 commandMap["${config.commandPrefix}$name"] = command
             }
+
+            if (command is ApplicationContextAware)
+                command.setApplicationContext(context)
         }
     }
 }

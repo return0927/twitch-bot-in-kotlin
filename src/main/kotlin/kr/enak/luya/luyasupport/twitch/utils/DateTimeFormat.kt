@@ -1,9 +1,11 @@
 package kr.enak.luya.luyasupport.twitch.utils
 
+import java.text.SimpleDateFormat
 import java.time.Clock
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.*
 
 fun utcNow() = LocalDateTime.now(Clock.systemUTC()).toInstant(ZoneOffset.UTC)
 
@@ -30,3 +32,6 @@ fun Duration.format(): String {
 
     return parts.joinToString(", ")
 }
+
+fun Duration.format(format: String): String =
+    SimpleDateFormat(format, Locale.KOREA).format(this.toMillis())
