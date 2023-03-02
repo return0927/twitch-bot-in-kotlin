@@ -10,4 +10,5 @@ data class TwitchBotConfiguration(
     val authToken: String,
     val channels: List<String> = listOf("eunhaklee", "jumiluya"),
     val commandPrefix: String = "!",
+    val timestampHooks: Map<String, String> = hashMapOf(),
 )
