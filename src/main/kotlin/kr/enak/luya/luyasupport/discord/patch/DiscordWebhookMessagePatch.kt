@@ -23,12 +23,16 @@ class DiscordWebhookMessagePatch(
     var threadName: String = "",
 ) : WebhookMessage(username, avatarUrl, content, embeds, isTTS, files, allowedMentions, flags) {
     companion object {
-        fun embeds(first: WebhookEmbed): DiscordWebhookMessagePatch {
+        fun embeds(
+            first: WebhookEmbed,
+            username: String? = null,
+            avatarUrl: String? = null,
+        ): DiscordWebhookMessagePatch {
             val list: MutableList<WebhookEmbed> = ArrayList(1)
             list.add(first)
             return DiscordWebhookMessagePatch(
-                null,
-                null,
+                username,
+                avatarUrl,
                 null,
                 list,
                 false,

@@ -20,14 +20,17 @@ fun Duration.format(): String {
     val seconds = this.toSeconds() % 60
 
     val parts = mutableListOf<String>(
-        "$days day" + needsPlural(days),
         "$hours hour" + needsPlural(hours),
         "$minutes minute" + needsPlural(minutes),
         "$seconds second" + needsPlural(seconds),
     )
+
     if (years > 0) {
         parts.add(0, "$years year" + if (years > 1) "s" else "")
+        parts.add(1, "$days day" + needsPlural(days))
         parts.removeAt(parts.lastIndex)
+    } else if (days > 0) {
+        parts.add(0, "$days day" + needsPlural(days))
     }
 
     return parts.joinToString(", ")

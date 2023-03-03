@@ -3,8 +3,11 @@ package kr.enak.luya.luyasupport.twitch.commands
 import club.minnced.discord.webhook.external.JDAWebhookClient
 import club.minnced.discord.webhook.send.WebhookEmbedBuilder
 import com.github.twitch4j.helix.domain.Stream
+import com.github.twitch4j.helix.domain.User
+import io.netty.handler.logging.LogLevel
 import kr.enak.luya.luyasupport.discord.DiscordTimestampFormat
 import kr.enak.luya.luyasupport.discord.patch.DiscordWebhookMessagePatch
+import kr.enak.luya.luyasupport.discord.patch.send
 import kr.enak.luya.luyasupport.discord.toDiscordFormat
 import kr.enak.luya.luyasupport.twitch.TwitchService
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
@@ -13,12 +16,12 @@ import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
 import kr.enak.luya.luyasupport.twitch.token
 import kr.enak.luya.luyasupport.twitch.utils.format
 import net.dv8tion.jda.api.EmbedBuilder
-import net.dv8tion.jda.api.entities.Webhook
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
+import reactor.netty.transport.logging.AdvancedByteBufFormat
 import java.time.Duration
 import java.time.Instant
 
@@ -33,7 +36,7 @@ class CommandMarkTimestampViaDiscordImpl(
             .clientConnector(
                 ReactorClientHttpConnector(
                     HttpClient.create()
-//                    .wiretap(this::class.java.canonicalName, LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL)
+                        .wiretap(this::class.java.canonicalName, LogLevel.TRACE, AdvancedByteBufFormat.TEXTUAL)
                 )
             )
             .build()
@@ -46,6 +49,8 @@ class CommandMarkTimestampViaDiscordImpl(
     private val coolDownMap: MutableMap<String, Long> = hashMapOf()
 
     private val infoThreadIdMap: MutableMap<String, Long> = hashMapOf()
+
+    private val userInfoCacheMap: MutableMap<String, User> = hashMapOf()
 
     private lateinit var context: ApplicationContext
 
@@ -75,25 +80,46 @@ class CommandMarkTimestampViaDiscordImpl(
         TwitchService.client.helix.apply {
             val info = getStreams(
                 token(), null, null, 1, null, null, null,
-                listOf("jumiluya")
+                listOf(dto.channel.name)
             ).execute()
 
             val stream = info.streams.getOrNull(0)
                 ?: return "채널이 아직 방송중이지 않은 것 같네요..!"
 
-            reportUptime(hookUrl, stream)
-        }
+            val userListToFind: List<String> = listOf(stream.userId, dto.user.id)
+                .filterNot { userInfoCacheMap.containsKey(it) }
 
-        return null
+            if (userListToFind.isNotEmpty()) {
+                val userInfoList = getUsers(
+                    token(), userListToFind, null
+                ).execute()
+
+                userInfoList.users.forEach {
+                    userInfoCacheMap[it.login] = it
+                }
+
+            }
+
+            val streamerInfo = userInfoCacheMap[stream.userLogin]
+                ?: return "채널 정보를 찾을 수 없어요.."
+            val chatterInfo = userInfoCacheMap[dto.user.name]
+                ?: return "요청하신 분의 정보를 찾을 수 없어요.."
+
+            return try {
+                reportUptime(hookUrl, stream, chatterInfo)
+            } catch (ex: RuntimeException) {
+                "얼레.. 오류가 났어요.. 미안해요ㅠ"
+            }
+        }
     }
 
-    private fun reportUptime(hook: String, stream: Stream) {
+    private fun reportUptime(hook: String, stream: Stream, requesterInfo: User): String? {
         val startedAtInTimestamp = stream.startedAtInstant.toEpochMilli() / 1000
         val client = JDAWebhookClient.withUrl(hook)
 
-        if (!infoThreadIdMap.containsKey(stream.userName)) {
+        if (!infoThreadIdMap.containsKey(stream.userLogin)) {
             val embed = EmbedBuilder()
-                .setTitle(stream.title, "https://www.twitch.tv/${stream.userName}")
+                .setTitle(stream.title, "https://www.twitch.tv/${stream.userLogin}")
                 .appendDescription(
                     "방송 시작: %s (%s)".format(
                         startedAtInTimestamp.toDiscordFormat(DiscordTimestampFormat.LONG),
@@ -106,17 +132,43 @@ class CommandMarkTimestampViaDiscordImpl(
             val localizedTimestamp = Duration
                 .between(Instant.ofEpochMilli(0), stream.startedAtInstant)
 
-            val payload = DiscordWebhookMessagePatch.embeds(WebhookEmbedBuilder.fromJDA(embed).build())
+            val payload = DiscordWebhookMessagePatch.embeds(
+                WebhookEmbedBuilder.fromJDA(embed).build(),
+                username = "방송 - " + stream.userName,
+                avatarUrl = userInfoCacheMap[stream.userLogin]!!.profileImageUrl.formatThumbnailUrl()
+            )
             payload.threadName = localizedTimestamp.format("YYYY-MM-dd HH:mm")
 
             val message = client
                 .send(payload)
                 .get()
-        }
-    }
 
-    private suspend fun sendHookToDiscord(hook: Webhook, content: String, thumbnail: String): Long {
-        return 0L
+            infoThreadIdMap[stream.userLogin] = message.id
+        }
+
+        if (infoThreadIdMap.containsKey(stream.userLogin)) {
+            val threadId = infoThreadIdMap[stream.userLogin] ?: throw RuntimeException("채널 스레드를 만들 수 없어요")
+            val now = Instant.now().epochSecond
+
+            client
+                .onThread(threadId)
+                .send(
+                    content = "%s (%s)".format(
+                        stream.uptime.format(),
+                        now.toDiscordFormat(DiscordTimestampFormat.RELATIVE),
+                    ),
+                    username = requesterInfo.displayName + (
+                            if (requesterInfo.displayName != requesterInfo.login) " (${requesterInfo.login})"
+                            else ""
+                            ),
+                    avatarUrl = requesterInfo.profileImageUrl.formatThumbnailUrl()
+                )
+                .get()
+
+            return "\uD83D\uDC99"
+        }
+
+        return "디스코드에 새 글을 만들지 못했어요..!"
     }
 
     private fun isCoolToRun(channelName: String): Boolean {
