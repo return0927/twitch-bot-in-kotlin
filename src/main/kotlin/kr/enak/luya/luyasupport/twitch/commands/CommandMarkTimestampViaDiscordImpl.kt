@@ -131,6 +131,7 @@ class CommandMarkTimestampViaDiscordImpl(
 
             val localizedTimestamp = Duration
                 .between(Instant.ofEpochMilli(0), stream.startedAtInstant)
+                .plusHours(9)
 
             val payload = DiscordWebhookMessagePatch.embeds(
                 WebhookEmbedBuilder.fromJDA(embed).build(),
