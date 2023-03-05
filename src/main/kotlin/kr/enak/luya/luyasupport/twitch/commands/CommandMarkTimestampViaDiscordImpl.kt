@@ -117,7 +117,7 @@ class CommandMarkTimestampViaDiscordImpl(
         val startedAtInTimestamp = stream.startedAtInstant.toEpochMilli() / 1000
         val client = JDAWebhookClient.withUrl(hook)
 
-        if (!infoThreadIdMap.containsKey(stream.userLogin)) {
+        if (!infoThreadIdMap.containsKey(stream.id)) {
             val embed = EmbedBuilder()
                 .setTitle(stream.title, "https://www.twitch.tv/${stream.userLogin}")
                 .appendDescription(
@@ -144,11 +144,11 @@ class CommandMarkTimestampViaDiscordImpl(
                 .send(payload)
                 .get()
 
-            infoThreadIdMap[stream.userLogin] = message.id
+            infoThreadIdMap[stream.id] = message.id
         }
 
-        if (infoThreadIdMap.containsKey(stream.userLogin)) {
-            val threadId = infoThreadIdMap[stream.userLogin] ?: throw RuntimeException("채널 스레드를 만들 수 없어요")
+        if (infoThreadIdMap.containsKey(stream.id)) {
+            val threadId = infoThreadIdMap[stream.id] ?: throw RuntimeException("채널 스레드를 만들 수 없어요")
             val now = Instant.now().epochSecond
 
             client
