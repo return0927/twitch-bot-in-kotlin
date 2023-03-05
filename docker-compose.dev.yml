@@ -2,7 +2,10 @@ version: '3'
 
 services:
   twitch-bot:
-    image: ghcr.io/return0927/twitch-bot-in-kotlin:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: production
     volumes:
       - ./application.yml:/run/luya-support/application.yml
     environment:
