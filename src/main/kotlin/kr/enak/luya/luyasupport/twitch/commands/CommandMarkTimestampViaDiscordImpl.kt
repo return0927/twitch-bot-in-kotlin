@@ -77,6 +77,8 @@ class CommandMarkTimestampViaDiscordImpl(
         val hookUrl = twitchConfig.timestampHooks[dto.channel.name]
             ?: return "아직 설정되지 않은 기능이에요"
 
+        val description = dto.args.joinToString(" ")
+
         TwitchService.client.helix.apply {
             val info = getStreams(
                 token(), null, null, 1, null, null, null,
@@ -106,14 +108,14 @@ class CommandMarkTimestampViaDiscordImpl(
                 ?: return "요청하신 분의 정보를 찾을 수 없어요.."
 
             return try {
-                reportUptime(hookUrl, stream, chatterInfo)
+                reportUptime(hookUrl, stream, chatterInfo, description)
             } catch (ex: RuntimeException) {
                 "얼레.. 오류가 났어요.. 미안해요ㅠ"
             }
         }
     }
 
-    private fun reportUptime(hook: String, stream: Stream, requesterInfo: User): String? {
+    private fun reportUptime(hook: String, stream: Stream, requesterInfo: User, description: String): String? {
         val startedAtInTimestamp = stream.startedAtInstant.toEpochMilli() / 1000
         val client = JDAWebhookClient.withUrl(hook)
 
@@ -154,9 +156,10 @@ class CommandMarkTimestampViaDiscordImpl(
             client
                 .onThread(threadId)
                 .send(
-                    content = "%s (%s)".format(
+                    content = "%s (%s)%s".format(
                         stream.uptime.format(),
                         now.toDiscordFormat(DiscordTimestampFormat.RELATIVE),
+                        if (description.isNotEmpty()) " - $description" else ""
                     ),
                     username = requesterInfo.displayName + (
                             if (requesterInfo.displayName != requesterInfo.login) " (${requesterInfo.login})"
