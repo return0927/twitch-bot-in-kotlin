@@ -74,7 +74,7 @@ open class CommandMarkTimestampViaDiscordImpl(
 
     }
 
-    override fun execute(dto: IncomingCommandDto): String? {
+    override suspend fun execute(dto: IncomingCommandDto): String? {
         if (!isCoolToRun(dto.channel.name))
             return null
 

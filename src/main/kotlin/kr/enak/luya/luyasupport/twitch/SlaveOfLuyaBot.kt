@@ -1,6 +1,9 @@
 package kr.enak.luya.luyasupport.twitch
 
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
 import kr.enak.luya.luyasupport.twitch.commands.CommandClipImpl
@@ -36,7 +39,7 @@ class SlaveOfLuyaBot(
         joinChannels(config.channels)
     }
 
-    fun onChat(event: ChannelMessageEvent) {
+    suspend fun onChat(event: ChannelMessageEvent) {
         val command = decideCommand(event.message)
         if (command != null) {
             val response = command.execute(IncomingCommandDto(event.channel, event.user, event.message))
@@ -57,7 +60,9 @@ class SlaveOfLuyaBot(
     private fun bindHandlers() {
         twitchService.eventManager.apply {
             onEvent(ChannelMessageEvent::class.java) {
-                onChat(it)
+                CoroutineScope(Dispatchers.IO).async {
+                    onChat(it)
+                }
             }
         }
     }

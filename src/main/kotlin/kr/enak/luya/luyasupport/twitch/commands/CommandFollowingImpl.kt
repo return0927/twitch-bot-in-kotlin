@@ -8,7 +8,6 @@ import kr.enak.luya.luyasupport.twitch.token
 import kr.enak.luya.luyasupport.twitch.utils.format
 import kr.enak.luya.luyasupport.twitch.utils.utcNow
 import java.time.Duration
-import java.time.LocalDateTime
 
 class CommandFollowingImpl(
     name: String,
@@ -23,7 +22,8 @@ class CommandFollowingImpl(
             return follows.follows.firstOrNull()
         }
     }
-    override fun execute(dto: IncomingCommandDto): String {
+
+    override suspend fun execute(dto: IncomingCommandDto): String {
         val following = getFollowsDate(dto.user.id, dto.channel.id)
             ?: return "아직 팔로우하고 있지 않네요..."
 
