@@ -64,6 +64,11 @@ class SlaveOfLuyaBot(
                     onChat(it)
                 }
             }
+            onEvent(ChannelMessageEvent::class.java) {
+                CoroutineScope(Dispatchers.IO).async {
+                    CommandClipImpl.ClipURLMessageDetector.onChat(it)
+                }
+            }
         }
     }
 
