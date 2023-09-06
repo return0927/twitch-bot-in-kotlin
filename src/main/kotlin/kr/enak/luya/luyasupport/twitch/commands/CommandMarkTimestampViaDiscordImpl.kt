@@ -25,7 +25,7 @@ import reactor.netty.transport.logging.AdvancedByteBufFormat
 import java.time.Duration
 import java.time.Instant
 
-class CommandMarkTimestampViaDiscordImpl(
+open class CommandMarkTimestampViaDiscordImpl(
     name: String,
     vararg aliases: String,
 ) : AbstractPrefixCommand(name, aliases), ApplicationContextAware {
@@ -44,13 +44,23 @@ class CommandMarkTimestampViaDiscordImpl(
         fun String.formatThumbnailUrl(width: Long = 1920, height: Long = 1080): String =
             this.replace("{width}", "$width")
                 .replace("{height}", "$height")
+
+        private val coolDownMap: MutableMap<String, Long> = hashMapOf()
+
+        private val infoThreadIdMap: MutableMap<String, Long> = hashMapOf()
+
+        private val userInfoCacheMap: MutableMap<String, User> = hashMapOf()
+
+        private fun isCoolToRun(channelName: String): Boolean {
+            val lastExecuted = coolDownMap[channelName] ?: 0
+
+            return System.currentTimeMillis() - lastExecuted > COOLDOWN
+        }
+
+        private fun markExecutedNow(channelName: String) {
+            coolDownMap[channelName] = System.currentTimeMillis()
+        }
     }
-
-    private val coolDownMap: MutableMap<String, Long> = hashMapOf()
-
-    private val infoThreadIdMap: MutableMap<String, Long> = hashMapOf()
-
-    private val userInfoCacheMap: MutableMap<String, User> = hashMapOf()
 
     private lateinit var context: ApplicationContext
 
@@ -99,7 +109,6 @@ class CommandMarkTimestampViaDiscordImpl(
                 userInfoList.users.forEach {
                     userInfoCacheMap[it.login] = it
                 }
-
             }
 
             val streamerInfo = userInfoCacheMap[stream.userLogin]
@@ -173,16 +182,6 @@ class CommandMarkTimestampViaDiscordImpl(
         }
 
         return "디스코드에 새 글을 만들지 못했어요..!"
-    }
-
-    private fun isCoolToRun(channelName: String): Boolean {
-        val lastExecuted = coolDownMap[channelName] ?: 0
-
-        return System.currentTimeMillis() - lastExecuted > COOLDOWN
-    }
-
-    private fun markExecutedNow(channelName: String) {
-        coolDownMap[channelName] = System.currentTimeMillis()
     }
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {

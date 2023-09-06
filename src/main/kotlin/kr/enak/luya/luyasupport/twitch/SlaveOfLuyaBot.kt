@@ -3,6 +3,7 @@ package kr.enak.luya.luyasupport.twitch
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
+import kr.enak.luya.luyasupport.twitch.commands.CommandClipImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandFollowingImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandMarkTimestampViaDiscordImpl
 import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
@@ -29,6 +30,7 @@ class SlaveOfLuyaBot(
             listOf<AbstractPrefixCommand>(
                 CommandFollowingImpl("follow", "팔로우"),
                 CommandMarkTimestampViaDiscordImpl("mark", "마커"),
+                CommandClipImpl("clip", "클립"),
             )
         )
         joinChannels(config.channels)
