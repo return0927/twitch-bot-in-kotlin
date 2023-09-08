@@ -39,7 +39,7 @@ class CommandClipImpl(
 
     object ClipURLMessageDetector {
         fun onChat(event: ChannelMessageEvent) {
-            if (event.user.id != "ssakdook") return
+            if (event.user.name != "ssakdook") return
             else if (event.message == "클립 생성을 요청했습니다.") return
             logger.info("Detected message candidate of clip url: ${event.message}")
 
