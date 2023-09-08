@@ -16,6 +16,7 @@ import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
 import kr.enak.luya.luyasupport.twitch.token
 import kr.enak.luya.luyasupport.twitch.utils.format
 import net.dv8tion.jda.api.EmbedBuilder
+import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
@@ -70,6 +71,8 @@ open class CommandMarkTimestampViaDiscordImpl(
     private val twitchService: TwitchService
         get() = context.getBean(TwitchService::class.java)
 
+    private val logger = LoggerFactory.getLogger(this.javaClass)
+
     private fun postConstruct() {
 
     }
@@ -119,6 +122,10 @@ open class CommandMarkTimestampViaDiscordImpl(
             return try {
                 reportUptime(hookUrl, stream, chatterInfo, description)
             } catch (ex: RuntimeException) {
+                logger.warn(
+                    "Error on performing a Discord webhook for Twitch channel ${dto.channel.name} on request of ${dto.user.name}",
+                    ex
+                )
                 "얼레.. 오류가 났어요.. 미안해요ㅠ"
             }
         }
