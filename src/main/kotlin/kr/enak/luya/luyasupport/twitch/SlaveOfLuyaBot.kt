@@ -1,8 +1,6 @@
 package kr.enak.luya.luyasupport.twitch
 
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
@@ -10,6 +8,7 @@ import kr.enak.luya.luyasupport.twitch.commands.CommandClipImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandFollowingImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandMarkTimestampViaDiscordImpl
 import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
+import kr.enak.luya.luyasupport.twitch.patch.Coroutines
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
@@ -60,12 +59,12 @@ class SlaveOfLuyaBot(
     private fun bindHandlers() {
         twitchService.eventManager.apply {
             onEvent(ChannelMessageEvent::class.java) {
-                CoroutineScope(Dispatchers.IO).async {
+                Coroutines.ioScope.async {
                     onChat(it)
                 }
             }
             onEvent(ChannelMessageEvent::class.java) {
-                CoroutineScope(Dispatchers.IO).async {
+                Coroutines.ioScope.async {
                     CommandClipImpl.ClipURLMessageDetector.onChat(it)
                 }
             }
