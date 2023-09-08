@@ -137,7 +137,7 @@ open class CommandMarkTimestampViaDiscordImpl(
 
         if (!infoThreadIdMap.containsKey(stream.id)) {
             val embed = EmbedBuilder()
-                .setTitle(stream.title, "https://www.twitch.tv/${stream.userLogin}")
+                .setTitle(stream.title.ifEmpty { "NO_TITLE" }, "https://www.twitch.tv/${stream.userLogin}")
                 .appendDescription(
                     "방송 시작: %s (%s)".format(
                         startedAtInTimestamp.toDiscordFormat(DiscordTimestampFormat.LONG),
