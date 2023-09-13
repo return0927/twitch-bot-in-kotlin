@@ -2,8 +2,8 @@ package kr.enak.luya.luyasupport.twitch
 
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent
 import kotlinx.coroutines.async
+import kr.enak.luya.luyasupport.discord.patch.toCommandDto
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
-import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
 import kr.enak.luya.luyasupport.twitch.commands.CommandClipImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandFollowingImpl
 import kr.enak.luya.luyasupport.twitch.commands.CommandMarkTimestampViaDiscordImpl
@@ -41,7 +41,7 @@ class SlaveOfLuyaBot(
     suspend fun onChat(event: ChannelMessageEvent) {
         val command = decideCommand(event.message)
         if (command != null) {
-            val response = command.execute(IncomingCommandDto(event.channel, event.user, event.message))
+            val response = command.execute(event.toCommandDto())
             if (response != null)
                 event.reply(event.twitchChat, response)
         }
