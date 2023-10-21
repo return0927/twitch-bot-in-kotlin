@@ -93,12 +93,18 @@ open class CommandMarkTimestampViaDiscordImpl(
         val description = dto.args.joinToString(" ")
 
         TwitchService.client.helix.apply {
-            val info = getStreams(
+            val infoReq = getStreams(
                 token(), null, null, 1, null, null, null,
                 listOf(dto.channel.name)
-            ).execute()
+            ).queue()
 
-            val stream = info.streams.getOrNull(0)
+            val info = try {
+                infoReq.get(1L, TimeUnit.SECONDS)
+            } catch (e: Throwable) {
+                null
+            }
+
+            val stream = info?.streams?.getOrNull(0)
                 ?: return "채널이 아직 방송중이지 않은 것 같네요..!"
 
             val userListToFind: List<String> = listOf(stream.userId, dto.user.id)
