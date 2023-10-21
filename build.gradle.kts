@@ -51,7 +51,7 @@ dependencies {
 
     implementation("org.reflections:reflections:0.10.2")
 
-    implementation("com.github.twitch4j:twitch4j:1.12.0")
+    implementation("com.github.twitch4j:twitch4j:1.17.0")
     implementation("com.github.philippheuer.events4j:events4j-handler-reactor:0.11.0")
 
     implementation("club.minnced:discord-webhooks:0.8.2")
