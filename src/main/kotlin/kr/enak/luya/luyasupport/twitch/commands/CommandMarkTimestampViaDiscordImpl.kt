@@ -13,6 +13,8 @@ import kr.enak.luya.luyasupport.twitch.TwitchService
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
 import kr.enak.luya.luyasupport.twitch.config.TwitchBotConfiguration
+import kr.enak.luya.luyasupport.twitch.patch.toJson
+import kr.enak.luya.luyasupport.twitch.patch.toLogString
 import kr.enak.luya.luyasupport.twitch.token
 import kr.enak.luya.luyasupport.twitch.utils.format
 import net.dv8tion.jda.api.EmbedBuilder
@@ -97,14 +99,16 @@ open class CommandMarkTimestampViaDiscordImpl(
             val infoReq = getStreams(
                 token(), null, null, 1, null, null, null,
                 listOf(dto.channel.name)
-            ).queue()
+            ).also { logger.debug("[Out]" + it.toLogString()) }.queue()
 
             val info = try {
                 infoReq.get(1L, TimeUnit.SECONDS)
             } catch (e: Throwable) {
+                logger.warn("[Twitch API] Server returned error or timed out", e)
                 null
             }
 
+            logger.debug("[Twitch API][Dump] Server returned: ${info?.toJson()}")
             val stream = info?.streams?.getOrNull(0)
                 ?: return "채널이 아직 방송중이지 않은 것 같네요..!"
 

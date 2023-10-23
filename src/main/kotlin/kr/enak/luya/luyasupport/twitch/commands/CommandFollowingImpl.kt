@@ -4,9 +4,11 @@ import com.github.twitch4j.helix.domain.InboundFollow
 import kr.enak.luya.luyasupport.twitch.TwitchService
 import kr.enak.luya.luyasupport.twitch.abc.AbstractPrefixCommand
 import kr.enak.luya.luyasupport.twitch.abc.IncomingCommandDto
+import kr.enak.luya.luyasupport.twitch.patch.toJson
 import kr.enak.luya.luyasupport.twitch.token
 import kr.enak.luya.luyasupport.twitch.utils.format
 import kr.enak.luya.luyasupport.twitch.utils.utcNow
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -14,6 +16,8 @@ class CommandFollowingImpl(
     name: String,
     vararg aliases: String
 ) : AbstractPrefixCommand(name, aliases) {
+    private val logger = LoggerFactory.getLogger(this.javaClass)
+
 
     class NotFollowingError : RuntimeException()
 
@@ -27,9 +31,11 @@ class CommandFollowingImpl(
             val follows = try {
                 followsReq.get(1L, TimeUnit.SECONDS)
             } catch (e: Throwable) {
+                logger.warn("[Twitch API] Server timed out", e)
                 throw ResponseTimeoutError()
             }
 
+            logger.debug("[Twitch API][Dump] Server returned: ${follows?.toJson()}")
             return follows.follows?.firstOrNull() ?: throw NotFollowingError()
         }
     }
